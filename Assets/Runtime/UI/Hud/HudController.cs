@@ -1,9 +1,4 @@
-using System.Collections.Generic;
 using UnityEngine;
-using System.Text;
-using UnityEngine.UI.Extensions;
-using DG.Tweening;
-using System.Linq;
 
 public class HudController
 {
@@ -24,6 +19,16 @@ public class HudController
         {
             visualThemeContainer.Apply(_uiCreator.visualThemeController.CurrentTheme);
         }
+    }
+
+    public void setScoreTop(int score)
+    {
+        view.scoreTop.text = score.ToString();
+    }
+
+    public void setScoreBottom(int score)
+    {
+        view.scoreBottom.text = score.ToString();
     }
 
     public HudView view { get; private set; }

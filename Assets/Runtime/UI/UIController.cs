@@ -5,12 +5,14 @@ using DG.Tweening;
 
 public class UIController
 {
-    public Signal startGame;
-    public Signal fadeComplete;
+    public Signal<GameType> startGame = new Signal<GameType>();
+    public Signal<string, string> joinGame = new Signal<string, string>();
+    public Signal fadeComplete = new Signal();
     private TextOverlayView _textOverlay;
     private GameObject _fadeScreen;
     private const float FADE_TIME = 0.5f;
     private static string BACKGROUND_CONTAINER_PREFAB = "UI/BackgroundContainer";
+    private BackgroundContainer _backgroundContainer;
     readonly UICreator _uiCreator;
     readonly MainMenuController _mainMenuController;
 
@@ -19,9 +21,6 @@ public class UIController
         _uiCreator = uiCreator;
         _mainMenuController = mainMenuController;
         uiCreator.visualThemeController = visualThemeController; 
-
-        startGame = new Signal();
-        fadeComplete = new Signal();
     }
 
     public void showMainMenu(bool useLongFade, bool fadeFromBlack = true)
@@ -42,7 +41,8 @@ public class UIController
         if (!_mainMenuController.ready)
         {
             _mainMenuController.init();
-            _mainMenuController.playGame.Add(handlePlayButtonClicked);
+            _mainMenuController.startGame.Add(startGame.Dispatch);
+            _mainMenuController.joinGame.Add(joinGame.Dispatch);
             _mainMenuController.show();
         }
         else
@@ -51,11 +51,21 @@ public class UIController
         }
     }
 
-    public void showBackground(VisualTheme visualTheme)
+    public void initBackground(VisualTheme visualTheme)
     {
-        GameObject prefab = Object.Instantiate(Resources.Load(BACKGROUND_CONTAINER_PREFAB)) as GameObject;
-        VisualThemeContainer visualThemeContainer = prefab.GetComponent<VisualThemeContainer>();
+        _backgroundContainer = Object.Instantiate(Resources.Load<BackgroundContainer>(BACKGROUND_CONTAINER_PREFAB));
+        VisualThemeContainer visualThemeContainer = _backgroundContainer.GetComponent<VisualThemeContainer>();
         visualThemeContainer.Apply(visualTheme);
+    }
+
+    public void hideBackground()
+    {
+        UITransitions.fade(_backgroundContainer.gameObject, _backgroundContainer.canvasGroup);
+    }
+
+    public void showBackground()
+    {
+        UITransitions.fade(_backgroundContainer.gameObject, _backgroundContainer.canvasGroup, false);
     }
 
     public void showTextOverlay(string text)
@@ -119,11 +129,6 @@ public class UIController
                                              System.Action cancelButtonAction = null, string cancelButtonText = null)
     {
         return _uiCreator.showConfirmationDialog(titleString, messageString, confirmButtonAction, confirmButtonText, cancelButtonAction, cancelButtonText);
-    }
-
-    private void handlePlayButtonClicked()
-    {
-        startGame.Dispatch();
     }
 
     private void fitToScreen(GameObject container)

@@ -15,7 +15,6 @@ public class ApplicationScope : LifetimeScope
         builder.Register<UIController>(Lifetime.Singleton);
         builder.Register<MainMenuController>(Lifetime.Singleton);
         builder.Register<HudController>(Lifetime.Singleton);
-        builder.Register<SceneController>(Lifetime.Singleton);
         builder.Register<LocaleManager>(Lifetime.Singleton);
         builder.Register<SaveStateController>(Lifetime.Singleton);
         builder.Register<AudioController>(Lifetime.Singleton);

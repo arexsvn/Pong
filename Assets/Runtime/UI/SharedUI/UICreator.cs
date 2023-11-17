@@ -11,8 +11,11 @@ public class UICreator
 	public const string DIALOG_WITH_IMAGE_PATH = "UI/DialogBoxWithImage";
 	public const string MESSAGE_BOX = "UI/MessageBox";
 	public const string TOOLTIP = "UI/Tooltip";
+    private static string FADE_SCREEN_PREFAB = "UI/ScreenFade";
+    private static string TEXT_OVERLAY_PREFAB = "UI/TextOverlay";
+    public const string LIST_VIEW_PATH = "UI/SimpleListView";
 
-	public ButtonView addButton(Transform container, ButtonVO vo)
+    public ButtonView addButton(Transform container, ButtonVO vo)
     {
         string buttonPrefabResourceKey = BUTTON_PATH;
 
@@ -86,6 +89,16 @@ public class UICreator
 
 		return view;
 	}
+
+	public BasicListView showBasicListView(string title, List<ButtonData> buttons = null, string prefabResourceKey = LIST_VIEW_PATH)
+	{
+		BasicListView view = Object.Instantiate(Resources.Load<BasicListView>(prefabResourceKey));
+        view.Init();
+		view.Set(title, buttons);
+        view.ApplyTheme(visualThemeController.CurrentTheme);
+
+        return view;
+    }
 
 	public DialogBoxWithImageView showDialogWithImage(string title, string description, Sprite sprite, List<ButtonVO> buttons = null, string prefabResourceKey = DIALOG_WITH_IMAGE_PATH)
 	{
@@ -233,9 +246,6 @@ public class UICreator
 
 		return gameObject;
 	}
-
-    private static string FADE_SCREEN_PREFAB = "UI/ScreenFade";
-    private static string TEXT_OVERLAY_PREFAB = "UI/TextOverlay";
 
     public GameObject createTextOverlay()
     {

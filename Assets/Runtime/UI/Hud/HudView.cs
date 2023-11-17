@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using TMPro;
 
 public class HudView : MonoBehaviour
 {
@@ -10,13 +11,9 @@ public class HudView : MonoBehaviour
     public CanvasGroup canvasGroup;
     public Button backButton;
     public Button themeButton;
-
+    public TextMeshProUGUI scoreTop;
+    public TextMeshProUGUI scoreBottom;
     public RectTransform safeAreaTransform;
-
-    private void Awake()
-    {
-        
-    }
 
     public void show(bool show = true, bool instant = true)
     {

@@ -4,7 +4,7 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
 {
     private bool _gamePaused = true;
     readonly UIController _uiController;
-    readonly SceneController _sceneController;
+    readonly LevelController _levelController;
     readonly SaveStateController _saveGameController;
     readonly CoroutineRunner _coroutineRunner;
     readonly HudController _hudController;
@@ -13,7 +13,7 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
     readonly VisualThemeController _visualThemeController;
 
     public GameController(UIController uiController, 
-                          SceneController sceneController, 
+                          LevelController levelController, 
                           SaveStateController saveGameController, 
                           CoroutineRunner coroutineRunner,
                           HudController hudController,
@@ -22,7 +22,7 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
                           VisualThemeController visualThemeController) 
     {
         _uiController = uiController;
-        _sceneController = sceneController;
+        _levelController = levelController;
         _saveGameController = saveGameController;
         _coroutineRunner = coroutineRunner;
         _hudController = hudController;
@@ -42,10 +42,11 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
 
         _hudController.init();
         _audioController.init();
-        _sceneController.init(exitGame);
+        _levelController.init(exitGame);
 
-        _uiController.startGame.Add(handleStartGame);
-        _uiController.showBackground(_visualThemeController.CurrentTheme);
+        _uiController.startGame.Add(startGame);
+        _uiController.joinGame.Add(joinGame);
+        _uiController.initBackground(_visualThemeController.CurrentTheme);
         showMainMenu(true);
 
         DG.Tweening.DOTween.SetTweensCapacity(500, 125);
@@ -77,22 +78,28 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
         }
     }
        
-    private void handleStartGame()
-    {
-        _uiController.hideMainMenu();
-        startGame();
-    }
-
     private void exitGame()
     {
         showMainMenu(false);
     }
 
-    private void startGame()
+    private void startGame(GameType gameType)
     {
+        _uiController.hideMainMenu();
+
         startGameMusic();
 
-        _sceneController.start();
+        _levelController.start(gameType);
+        _gamePaused = false;
+    }
+
+    private void joinGame(string ipAddress, string host)
+    {
+        _uiController.hideMainMenu();
+
+        startGameMusic();
+
+        _levelController.start(GameType.Join, ipAddress, host);
         _gamePaused = false;
     }
 

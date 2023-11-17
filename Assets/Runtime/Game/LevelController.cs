@@ -14,6 +14,7 @@ public class LevelController
     readonly AudioController _audioController;
     readonly VisualThemeController _visualThemeController;
     readonly LocaleManager _localeManager;
+    readonly UIController _uiController;
     private System.Action _exit;
     private MessageBoxView _levelDialog;
     private System.Random _rand;
@@ -29,7 +30,8 @@ public class LevelController
                            ParticleController particleController,
                            AudioController audioController,
                            VisualThemeController visualThemeController,
-                           LocaleManager localeManager)
+                           LocaleManager localeManager,
+                           UIController uIController)
     {
         _courtController = courtController;
         _hudController = hudController;
@@ -40,6 +42,7 @@ public class LevelController
         _audioController = audioController;
         _visualThemeController = visualThemeController;
         _localeManager = localeManager;
+        _uiController = uIController;
     }
     public void init(System.Action exit)
     {
@@ -52,6 +55,7 @@ public class LevelController
         _courtController.init();
         _courtController.ready.Add(handleCourtReady);
         _courtController.error.Add(handleCourtError);
+        _courtController.playerWon.Add(showEndLevel);
 
         _hudController.view.backButton.onClick.AddListener(handleBack);
         _hudController.view.themeButton.onClick.AddListener(showTheme);
@@ -63,7 +67,7 @@ public class LevelController
         _localeManager.LanguageChanged.Add(handleLanguageChanged);
     }
 
-    public void start()
+    public void start(GameType gameType, string ipAddress = null, string host = null)
     {
         if (_levelInProgress)
         {
@@ -73,6 +77,8 @@ public class LevelController
         {
             startNextLevel();
         }
+
+        _uiController.hideBackground();
     }
     
     private void showTheme()
@@ -157,12 +163,13 @@ public class LevelController
 
     private void handleBack()
     {
+        _uiController.showBackground();
         _audioController.play("click", AudioType.Sfx);
         showCourt(false);
         _exit();
     }
 
-    private void showEndLevel()
+    private void showEndLevel(int winner)
     {
         _levelInProgress = false;
 
@@ -171,6 +178,15 @@ public class LevelController
         _saveStateController.save();
 
         showFireworks();
+
+        string result = "Top Player Won!";
+        if (winner < 0) 
+        {
+            result = "Bottom Player Won!";
+        }
+
+        _levelDialog.baseView.SetTitle($"<size=120%>{result}</size>");
+        _levelDialog.show(true);
     }
 
     private void showFireworks()

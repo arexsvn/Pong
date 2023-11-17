@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3196251037038057555}
   - component: {fileID: 3196251037038057552}
   - component: {fileID: 3196251037038057553}
-  - component: {fileID: 2713420968355452034}
+  - component: {fileID: 5159544495307421640}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -30,6 +30,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3196251037306775571}
   m_RootOrder: 0
@@ -56,7 +57,9 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -100,26 +103,18 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &2713420968355452034
-MonoBehaviour:
+--- !u!225 &5159544495307421640
+CanvasGroup:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3196251037038057559}
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886c7e6b3e6723243ae9c78759b8b4be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Primary: []
-  Highlight: []
-  Border: []
-  Background: []
-  PrimaryText: []
-  HighlightText: []
-  TitleText: []
-  BackgroundImageContainer: {fileID: 0}
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &3196251037306775568
 GameObject:
   m_ObjectHideFlags: 0
@@ -148,6 +143,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3196251037038057558}
   m_Father: {fileID: 0}
@@ -185,3 +181,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 131a7e70b6ed194448e49d9624647ed6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canvasGroup: {fileID: 5159544495307421640}
