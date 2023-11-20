@@ -29,8 +29,8 @@ public class DialogBoxView : MonoBehaviour
         baseView.baseView.showBackground(show);
     }
 
-    public void show(bool show)
+    public void show(bool show, float time = UITransitions.FADE_TIME)
     {
-        baseView.show(show);
+        baseView.show(show, time, false);
     }
 }

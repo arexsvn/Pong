@@ -202,6 +202,7 @@ public class SaveState
     public float musicVolume = .4f;
     public float sfxVolume = .6f;
     public string currentTheme;
+    public string lastIpAddress;
 }
 
 [Serializable]

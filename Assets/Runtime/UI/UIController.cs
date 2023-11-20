@@ -5,9 +5,8 @@ using DG.Tweening;
 
 public class UIController
 {
-    public Signal<GameType> startGame = new Signal<GameType>();
-    public Signal<string, string> joinGame = new Signal<string, string>();
     public Signal fadeComplete = new Signal();
+    public Signal startGame = new Signal();
     private TextOverlayView _textOverlay;
     private GameObject _fadeScreen;
     private const float FADE_TIME = 0.5f;
@@ -42,13 +41,8 @@ public class UIController
         {
             _mainMenuController.init();
             _mainMenuController.startGame.Add(startGame.Dispatch);
-            _mainMenuController.joinGame.Add(joinGame.Dispatch);
-            _mainMenuController.show();
         }
-        else
-        {
-            _mainMenuController.show();
-        }
+        _mainMenuController.show();
     }
 
     public void initBackground(VisualTheme visualTheme)
@@ -122,13 +116,6 @@ public class UIController
     public void hideMainMenu()
     {
         _mainMenuController.hide();
-    }
-
-    public DialogBoxView showConfirmationDialog(string titleString, string messageString,
-                                             System.Action confirmButtonAction = null, string confirmButtonText = null,
-                                             System.Action cancelButtonAction = null, string cancelButtonText = null)
-    {
-        return _uiCreator.showConfirmationDialog(titleString, messageString, confirmButtonAction, confirmButtonText, cancelButtonAction, cancelButtonText);
     }
 
     private void fitToScreen(GameObject container)

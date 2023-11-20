@@ -5,28 +5,24 @@ using signals;
 
 public class MainMenuController
 {
-    public Signal<GameType> startGame = new Signal<GameType>();
-    public Signal<string, string> joinGame = new Signal<string, string>();
+    public Signal startGame;
     private MainMenuView _view;
     private ButtonView _playButtonView;
     private static string MAIN_MENU_PREFAB = "UI/MainMenu";
-    private static string JOIN_GAME_PREFAB = "UI/JoinGame";
     readonly UICreator _uiCreator;
     readonly VisualThemeController _themeController;
-    readonly SaveStateController _saveStateController;
     readonly SettingsController _settingsController;
     readonly AudioController _audioController;
     readonly LocaleManager _localeManager;
-    private bool _offline = false;
-    private BasicListView _startGameDialog;
-    private BasicListView _selectMultiplayerGameTypeDialog;
-    private JoinGameView _joinGameView;
 
-    public MainMenuController(UICreator uiCreator, VisualThemeController themeController, SaveStateController saveStateController, SettingsController settingsController, AudioController audioController, LocaleManager localeManager)
+    public MainMenuController(UICreator uiCreator, 
+                              VisualThemeController themeController, 
+                              SettingsController settingsController, 
+                              AudioController audioController, 
+                              LocaleManager localeManager)
     {
         _uiCreator = uiCreator;
         _themeController = themeController;
-        _saveStateController = saveStateController;
         _settingsController = settingsController;
         _audioController = audioController;
         _localeManager = localeManager;
@@ -38,6 +34,8 @@ public class MainMenuController
         {
             Object.Destroy(_view.gameObject);
         }
+
+        startGame = new Signal();
 
         _localeManager.LanguageChanged.Add(setText);
 
@@ -81,89 +79,7 @@ public class MainMenuController
     public void handlePlayGame()
     {
         _audioController.play("click", AudioType.Sfx);
-
-        if (_offline)
-        {
-            startAIGame();
-            return;
-        }
-
-        if (_startGameDialog != null)
-        {
-            _startGameDialog.Show();
-            return;
-        }
-
-        _startGameDialog = _uiCreator.showBasicListView("Start Game", new List<ButtonData> 
-        {
-            new ButtonData("versus ai", startAIGame),
-            new ButtonData("versus human", showMultiplayerGameTypeSelection)
-        });
-    }
-
-    private void showMultiplayerGameTypeSelection()
-    {
-        if (_selectMultiplayerGameTypeDialog != null)
-        {
-            _selectMultiplayerGameTypeDialog.Show();
-            return;
-        }
-
-        _selectMultiplayerGameTypeDialog = _uiCreator.showBasicListView("Select Multiplayer Game Type", new List<ButtonData>
-        {
-            new ButtonData("join game", showJoinGame),
-            new ButtonData("host game", startHostGame),
-            new ButtonData("start dedicated server", startDedicatedServerGame)
-        });
-    }
-
-    private void startDedicatedServerGame()
-    {
-        hideDialogs();
-        startGame.Dispatch(GameType.DedicatedServer);
-    }
-
-    private void startHostGame()
-    {
-        hideDialogs();
-        startGame.Dispatch(GameType.Host);
-    }
-
-    private void startAIGame()
-    {
-        hideDialogs();
-        startGame.Dispatch(GameType.AI);
-    }
-
-    private void hideDialogs()
-    {
-        _startGameDialog.Hide();
-        _selectMultiplayerGameTypeDialog.Hide();
-        _joinGameView.fade(true, UITransitions.FADE_TIME);
-    }
-
-    private void showJoinGame()
-    {
-        if (_joinGameView != null)
-        {
-            _joinGameView.fade(false, UITransitions.FADE_TIME);
-            return;
-        }
-
-        _joinGameView = Object.Instantiate(Resources.Load<JoinGameView>(JOIN_GAME_PREFAB));
-        _joinGameView.ApplyTheme(_uiCreator.visualThemeController.CurrentTheme);
-
-        _joinGameView.joinButton.button.onClick.AddListener(handleJoinGame);
-        _joinGameView.backButton.onClick.AddListener(() =>
-        {
-            _joinGameView.fade(true, UITransitions.FADE_TIME);
-        });
-    }
-
-    private void handleJoinGame()
-    {
-        hideDialogs();
-        joinGame.Dispatch(_joinGameView.ipAddressText.text, _joinGameView.hostText.text);
+        startGame.Dispatch();
     }
 
     public void handleSelectTheme()

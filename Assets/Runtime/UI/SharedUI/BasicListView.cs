@@ -10,6 +10,7 @@ public class BasicListView : MonoBehaviour, IUIView
     public Button closeButton;
     public RectTransform listContainer;
     public BasicButtonView listItemPrefab;
+    public CanvasGroup canvasGroup;
 
     public event System.Action<IUIView> OnReady;
     public event System.Action<IUIView> OnClosed;
@@ -17,13 +18,23 @@ public class BasicListView : MonoBehaviour, IUIView
     public void Show(bool animate = true)
     {
         gameObject.SetActive(true);
+        if (animate)
+        {
+            UITransitions.fade(gameObject, canvasGroup, false);
+        }
     }
 
     public void Hide(bool animate = true)
     {
         OnClosed?.Invoke(this);
-        gameObject.SetActive(false);
-        //Destroy(gameObject);
+        if (animate)
+        {
+            UITransitions.fade(gameObject, canvasGroup);
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     public void ApplyTheme(VisualTheme theme)

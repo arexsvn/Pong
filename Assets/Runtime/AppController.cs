@@ -1,10 +1,10 @@
 using VContainer.Unity;
 
-public class GameController : ITickable, ILateTickable, IFixedTickable, IInitializable
+public class AppController : ITickable, ILateTickable, IFixedTickable, IInitializable
 {
     private bool _gamePaused = true;
     readonly UIController _uiController;
-    readonly LevelController _levelController;
+    readonly GameController _gameController;
     readonly SaveStateController _saveGameController;
     readonly CoroutineRunner _coroutineRunner;
     readonly HudController _hudController;
@@ -12,8 +12,8 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
     readonly LocaleManager _localeManager;
     readonly VisualThemeController _visualThemeController;
 
-    public GameController(UIController uiController, 
-                          LevelController levelController, 
+    public AppController(UIController uiController, 
+                          GameController gameController, 
                           SaveStateController saveGameController, 
                           CoroutineRunner coroutineRunner,
                           HudController hudController,
@@ -22,7 +22,7 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
                           VisualThemeController visualThemeController) 
     {
         _uiController = uiController;
-        _levelController = levelController;
+        _gameController = gameController;
         _saveGameController = saveGameController;
         _coroutineRunner = coroutineRunner;
         _hudController = hudController;
@@ -42,11 +42,14 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
 
         _hudController.init();
         _audioController.init();
-        _levelController.init(exitGame);
 
-        _uiController.startGame.Add(startGame);
-        _uiController.joinGame.Add(joinGame);
+        _gameController.init();
+        _gameController.enterGame.Add(gameStarted);
+        _gameController.exitGame.Add(exitGame);
+
         _uiController.initBackground(_visualThemeController.CurrentTheme);
+        _uiController.startGame.Add(showGameTypes);
+
         showMainMenu(true);
 
         DG.Tweening.DOTween.SetTweensCapacity(500, 125);
@@ -60,7 +63,6 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
     private void startGameMusic()
     {
         _audioController.fade(AudioType.Music, 0f);
-
         _coroutineRunner.delayAction(() => { _audioController.play("skyline", AudioType.Music); }, 1.8f);
     }
 
@@ -83,23 +85,18 @@ public class GameController : ITickable, ILateTickable, IFixedTickable, IInitial
         showMainMenu(false);
     }
 
-    private void startGame(GameType gameType)
+    private void showGameTypes()
     {
-        _uiController.hideMainMenu();
-
-        startGameMusic();
-
-        _levelController.start(gameType);
-        _gamePaused = false;
+        _gameController.showGameTypes();
     }
 
-    private void joinGame(string ipAddress, string host)
+    private void gameStarted()
     {
         _uiController.hideMainMenu();
+        _uiController.hideBackground();
 
         startGameMusic();
 
-        _levelController.start(GameType.Join, ipAddress, host);
         _gamePaused = false;
     }
 

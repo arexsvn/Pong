@@ -196,7 +196,7 @@ public class UICreator
 
 	public DialogBoxView showConfirmationDialog(string titleString, string messageString, 
 											 System.Action confirmButtonAction = null, string confirmButtonText = null, 
-		                                     System.Action cancelButtonAction = null, string cancelButtonText = null)
+		                                     bool showCancel = false, System.Action cancelButtonAction = null, string cancelButtonText = null)
 	{
 		DialogBoxView dialogBoxView = null;
 		List<ButtonVO> actions = new List<ButtonVO>();
@@ -220,7 +220,7 @@ public class UICreator
 			actions.Add(new ButtonVO(() => dialogBoxView.baseView.baseView.fade(true, -1, true), confirmButtonText));
 		}
 
-		if (cancelButtonAction != null)
+		if (showCancel)
 		{
 			if (cancelButtonText == null)
 			{
@@ -230,7 +230,7 @@ public class UICreator
             UnityAction doCancelAction = delegate
 			{
 				dialogBoxView.baseView.baseView.fade(true, -1, true);
-				cancelButtonAction();
+				cancelButtonAction?.Invoke();
 			};
 			actions.Add(new ButtonVO(doCancelAction, cancelButtonText));
 		}

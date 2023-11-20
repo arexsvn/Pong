@@ -1,38 +1,36 @@
+using System;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 using UnityEngine;
 
 public class Player : NetworkBehaviour
 {
-    public NetworkVariable<Vector3> Position = new NetworkVariable<Vector3>();
-    private NetworkTransform _networkTransform;
+    public Action DoServe;
+    public int PlayerNumber { get => _playerNumber; }
     private Renderer _renderer;
     private Vector2 _bounds = new Vector2(-4, 4);
     private float _speed = .26f;
     private int _direction = 0;
+    private bool _canServe;
     private int _lastDirection = 0;
+    private int _playerNumber;
 
     private void Awake()
     {
-        _networkTransform = GetComponent<NetworkTransform>();
         _renderer = GetComponent<Renderer>();
         _renderer.enabled = false;
     }
 
-    /*
-    public override void OnNetworkSpawn()
+    [ClientRpc]
+    public void ShowClientRpc(int playerNumber)
     {
-        if (IsOwner)
-        {
-            //Move();
-        }
+        _playerNumber = playerNumber;
+        DoShow();
     }
-    */
 
     [ClientRpc]
-    public void ShowClientRpc()
+    public void CanServeClientRpc()
     {
-        DoShow();
+        _canServe = true;
     }
 
     private void DoShow()
@@ -40,48 +38,23 @@ public class Player : NetworkBehaviour
         _renderer.enabled = true;
     }
 
-    public void Show()
+    public void Show(int playerNumber)
     {
         if (NetworkManager.Singleton.IsServer)
         {
-            ShowClientRpc();
+            ShowClientRpc(playerNumber);
 
             // Show on dedicated server as well
             if (!NetworkManager.Singleton.IsHost) 
             {
+                _playerNumber = playerNumber;
                 DoShow();
             }
         }
     }
-    /*
-    public void Move()
-    {
-        if (NetworkManager.Singleton.IsServer)
-        {
-            var randomPosition = GetRandomPositionOnPlane();
-            transform.position = randomPosition;
-            Position.Value = randomPosition;
-        }
-        else
-        {
-            SubmitPositionRequestServerRpc();
-        }
-    }
 
-    [ServerRpc]
-    void SubmitPositionRequestServerRpc(ServerRpcParams rpcParams = default)
-    {
-        Position.Value = GetRandomPositionOnPlane();
-    }
-
-    static Vector3 GetRandomPositionOnPlane()
-    {
-        return new Vector3(UnityEngine.Random.Range(-3f, 3f), 1f, UnityEngine.Random.Range(-3f, 3f));
-    }
-    */
     private void Update()
     {
-        //transform.position = Position.Value;
         CheckInput();
     }
 
@@ -98,6 +71,20 @@ public class Player : NetworkBehaviour
         if (IsOwner)
         {
             int currentDirection = 0;
+
+            if (_canServe)
+            {
+                if (Input.GetKey(KeyCode.Space))
+                {
+                    _canServe = false;
+                    SubmitServeRequestServerRpc();
+                    if (!NetworkManager.Singleton.IsHost)
+                    {
+                        handleServeRequest();
+                    }
+                    return;
+                }
+            }
 
             if (Input.GetKey(KeyCode.LeftArrow))
             {
@@ -117,12 +104,23 @@ public class Player : NetworkBehaviour
     }
 
     [ServerRpc]
-    void SubmitMoveRequestServerRpc(int direction)
+    private void SubmitMoveRequestServerRpc(int direction)
     {
         _direction = direction;
     }
 
-    void Move()
+    [ServerRpc]
+    private void SubmitServeRequestServerRpc()
+    {
+        handleServeRequest();
+    }
+
+    private void handleServeRequest()
+    {
+        DoServe?.Invoke();
+    }
+
+    private void Move()
     {
         if (_direction == 0)
         {

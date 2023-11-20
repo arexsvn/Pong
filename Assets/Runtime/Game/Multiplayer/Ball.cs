@@ -1,24 +1,17 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
 
 public class Ball : NetworkBehaviour
 {
-    public Action<int> OutOfBounds;
+    public Action OutOfBounds;
+    public NetworkTransform owner;
     private Vector2 _velocity = Vector2.zero;
     private Vector2 _bounds = new Vector2(-5, 5);
     private Vector2 _goalLimits = new Vector2(-11, 11);
     private float _speed = .22f;
     private bool _outOfBounds;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
 
     private void FixedUpdate()
     {
@@ -31,8 +24,6 @@ public class Ball : NetworkBehaviour
     public void ResetToStart()
     {
         _velocity = Vector2.zero;
-        NetworkTransform networkTransform = GetComponent<NetworkTransform>();
-        networkTransform.Teleport(Vector3.zero, networkTransform.transform.rotation, networkTransform.transform.lossyScale);
         _outOfBounds = false;
     }
 
@@ -49,8 +40,26 @@ public class Ball : NetworkBehaviour
         return UnityEngine.Random.Range(0, 2) * 2 - 1;
     }
 
+    [ClientRpc]
+    public void OutOfBoundsClientRpc()
+    {
+        handleOutOfBounds();
+    }
+
     void Move()
     {
+        if (owner != null)
+        {
+            Vector3 offset = owner.transform.forward * .8f;
+            if (owner.transform.position.z > 0)
+            {
+                offset *= -1;
+            }
+
+            transform.position = owner.transform.position + offset;
+            return;
+        }
+        
         if (_velocity == Vector2.zero)
         {
             return;
@@ -61,17 +70,18 @@ public class Ball : NetworkBehaviour
         if (!_outOfBounds)
         {
             // send goal event
-            if (transform.position.z < _goalLimits.x)
+            if (transform.position.z < _goalLimits.x || transform.position.z > _goalLimits.y)
             {
-                handleOutOfBounds(-1);
-                return;
-            }
-            else if (transform.position.z > _goalLimits.y)
-            {
-                handleOutOfBounds(1);
+                OutOfBoundsClientRpc();
+
+                if (!NetworkManager.Singleton.IsHost)
+                {
+                    handleOutOfBounds();
+                }
                 return;
             }
 
+            // handle hitting walls
             if (transform.position.x < _bounds.x || transform.position.x > _bounds.y)
             {
                 float result = 0;
@@ -105,8 +115,6 @@ public class Ball : NetworkBehaviour
         float deltaX = transform.position.x - playerTransform.position.x;
         float offsetX = Mathf.Min(Math.Abs(deltaX) / width, .6f);
 
-        Debug.Log($"Collision Offset : {offsetX}");
-
         _velocity.x = offsetX * _speed;
         _velocity.y = (1 - offsetX) * _speed;
 
@@ -127,9 +135,9 @@ public class Ball : NetworkBehaviour
         _velocity.y = result;
     }
 
-    private void handleOutOfBounds(int direction)
+    private void handleOutOfBounds()
     {
         _outOfBounds = true;
-        OutOfBounds?.Invoke(direction);
+        OutOfBounds?.Invoke();
     }
 }
