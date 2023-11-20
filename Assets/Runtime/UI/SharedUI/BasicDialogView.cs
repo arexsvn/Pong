@@ -18,12 +18,13 @@ public class BasicDialogView : MonoBehaviour, IUIView
     public void Show(bool animate = true)
     {
         gameObject.SetActive(true);
+        OnReady?.Invoke(this);
     }
 
     public void Hide(bool animate = true)
     {
-        OnClosed?.Invoke(this);
         gameObject.SetActive(false);
+        OnClosed?.Invoke(this);
     }
 
     public void Init()

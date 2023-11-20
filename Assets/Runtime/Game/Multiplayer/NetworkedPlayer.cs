@@ -2,22 +2,18 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 
-public class Player : NetworkBehaviour
+public class NetworkedPlayer : NetworkBehaviour
 {
     public Action DoServe;
     public int PlayerNumber { get => _playerNumber; }
-    private Renderer _renderer;
-    private Vector2 _bounds = new Vector2(-4, 4);
-    private float _speed = .26f;
-    private int _direction = 0;
+    private Mallet _mallet;
     private bool _canServe;
     private int _lastDirection = 0;
     private int _playerNumber;
 
     private void Awake()
     {
-        _renderer = GetComponent<Renderer>();
-        _renderer.enabled = false;
+        _mallet = GetComponent<Mallet>();
     }
 
     [ClientRpc]
@@ -35,7 +31,7 @@ public class Player : NetworkBehaviour
 
     private void DoShow()
     {
-        _renderer.enabled = true;
+        _mallet.Show();
     }
 
     public void Show(int playerNumber)
@@ -62,7 +58,7 @@ public class Player : NetworkBehaviour
     {
         if (IsServer)
         {
-            Move();
+            _mallet.Move();
         }
     }
 
@@ -106,7 +102,7 @@ public class Player : NetworkBehaviour
     [ServerRpc]
     private void SubmitMoveRequestServerRpc(int direction)
     {
-        _direction = direction;
+        _mallet.SetDirection(direction);
     }
 
     [ServerRpc]
@@ -118,21 +114,5 @@ public class Player : NetworkBehaviour
     private void handleServeRequest()
     {
         DoServe?.Invoke();
-    }
-
-    private void Move()
-    {
-        if (_direction == 0)
-        {
-            return;
-        }
-        
-        float distance = _speed * _direction;
-        float endX = Mathf.Clamp(transform.position.x + distance, _bounds[0], _bounds[1]);
-
-        if (endX != transform.position.x)
-        {
-            transform.position = new Vector3(endX, transform.position.y, transform.position.z);
-        }
     }
 }

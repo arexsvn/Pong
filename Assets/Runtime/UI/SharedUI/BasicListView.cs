@@ -20,7 +20,11 @@ public class BasicListView : MonoBehaviour, IUIView
         gameObject.SetActive(true);
         if (animate)
         {
-            UITransitions.fade(gameObject, canvasGroup, false);
+            UITransitions.fade(gameObject, canvasGroup, false, false, UITransitions.FADE_TIME, go => { OnReady?.Invoke(this);  });
+        }
+        else
+        {
+            OnReady?.Invoke(this);
         }
     }
 

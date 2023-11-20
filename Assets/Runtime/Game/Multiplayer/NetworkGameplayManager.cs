@@ -15,7 +15,7 @@ public class NetworkGameplayManager
     public Action<List<string>> gameStarted;
     public Action gameRestarted;
     public Action<ulong> clientDisconnected;
-    private Ball _ball;
+    private NetworkedBall _ball;
     private int _totalPlayers;
     private int _maxPlayers = 2;
     private List<Vector3> _startPositions = new List<Vector3> { new Vector3(0, 0, 9), new Vector3(0, 0, -9) };
@@ -144,11 +144,11 @@ public class NetworkGameplayManager
             return;
         }
 
-        List<Player> players = new List<Player>();
+        List<NetworkedPlayer> players = new List<NetworkedPlayer>();
         for (int index = 0; index < _totalPlayers; index++)
         {
             ulong uid = _networkManager.ConnectedClientsIds[index];
-            Player player = _networkManager.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<Player>();
+            NetworkedPlayer player = _networkManager.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<NetworkedPlayer>();
             players.Add(player);
         }
 
@@ -169,7 +169,7 @@ public class NetworkGameplayManager
         if (_totalPlayers == _maxPlayers)
         {
             List<string> uids = new List<string>();
-            List<Player> players = new List<Player>();
+            List<NetworkedPlayer> players = new List<NetworkedPlayer>();
 
             for (int index = 0; index < _totalPlayers; index++)
             {
@@ -177,7 +177,7 @@ public class NetworkGameplayManager
                 uids.Add(uid.ToString());
                 NetworkObject playerObject = _networkManager.SpawnManager.GetPlayerNetworkObject(uid);
                 NetworkTransform playerTransform = playerObject.GetComponent<NetworkTransform>();
-                Player player = playerObject.GetComponent<Player>();
+                NetworkedPlayer player = playerObject.GetComponent<NetworkedPlayer>();
 
                 players.Add(player);
 
@@ -195,21 +195,27 @@ public class NetworkGameplayManager
 
     private void handlePlayerServe()
     {
-        _ball.owner = null;
-        _ball.SetRandomVelocity();
+        int direction = 1;
+        if (_ball.GetOwner().position.z > 0)
+        {
+            direction = -1;
+        }
+
+        _ball.ClearOwner();
+        _ball.SetRandomVelocity(direction);
     }
 
-    private void createBall(Player player)
+    private void createBall(NetworkedPlayer player)
     {
-        _ball = UnityEngine.Object.Instantiate(Resources.Load<Ball>(BALL_PREFAB));
+        _ball = UnityEngine.Object.Instantiate(Resources.Load<NetworkedBall>(BALL_PREFAB));
         _ball.OutOfBounds += handleOutOfBounds;
         _ball.GetComponent<NetworkObject>().Spawn();
-        _ball.owner = player.GetComponent<NetworkTransform>();
+        _ball.SetOwner(player.GetComponent<NetworkTransform>());
 
-        player.GetComponent<Player>().CanServeClientRpc();
+        player.GetComponent<NetworkedPlayer>().CanServeClientRpc();
 
         NetworkTransform networkTransform = _ball.GetComponent<NetworkTransform>();
-        networkTransform.Teleport(_ball.owner.transform.position, networkTransform.transform.rotation, networkTransform.transform.lossyScale);
+        networkTransform.Teleport(_ball.GetOwner().position, networkTransform.transform.rotation, networkTransform.transform.lossyScale);
     }
 
     private void OnClientDisconnectCallback(ulong clientId)
@@ -260,13 +266,13 @@ public class NetworkGameplayManager
         {
             ulong uid = _networkManager.ConnectedClientsIds[index];
             NetworkObject playerObject = _networkManager.SpawnManager.GetPlayerNetworkObject(uid);
-            Player player = playerObject.GetComponent<Player>();
+            NetworkedPlayer player = playerObject.GetComponent<NetworkedPlayer>();
 
             if (player.PlayerNumber != playerNumber)
             {
-                _ball.owner = playerObject.GetComponent<NetworkTransform>();
+                _ball.SetOwner(playerObject.GetComponent<NetworkTransform>());
                 NetworkTransform networkTransform = _ball.GetComponent<NetworkTransform>();
-                networkTransform.Teleport(_ball.owner.transform.position, networkTransform.transform.rotation, networkTransform.transform.lossyScale);
+                networkTransform.Teleport(_ball.GetOwner().position, networkTransform.transform.rotation, networkTransform.transform.lossyScale);
                 player.CanServeClientRpc();
                 break;
             }

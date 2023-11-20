@@ -1,25 +1,17 @@
 using System;
-using Unity.Netcode;
-using Unity.Netcode.Components;
 using UnityEngine;
 
-public class Ball : NetworkBehaviour
+public class Ball : MonoBehaviour
 {
-    public Action OutOfBounds;
-    public NetworkTransform owner;
+    private Transform _owner;
     private Vector2 _velocity = Vector2.zero;
     private Vector2 _bounds = new Vector2(-5, 5);
     private Vector2 _goalLimits = new Vector2(-11, 11);
     private float _speed = .22f;
     private bool _outOfBounds;
 
-    private void FixedUpdate()
-    {
-        if (IsServer)
-        {
-            Move();
-        }
-    }
+    public bool OutOfBounds { get => _outOfBounds; }
+    public Transform Owner { get => _owner; set => _owner = value; }
 
     public void ResetToStart()
     {
@@ -27,39 +19,33 @@ public class Ball : NetworkBehaviour
         _outOfBounds = false;
     }
 
-    public void SetRandomVelocity()
+    public void SetRandomVelocity(int direction = 0)
     {
         float angle = UnityEngine.Random.Range(20f, 160f);
         float radians = angle * Mathf.Deg2Rad;
 
-        _velocity = _speed * new Vector2(Mathf.Cos(radians) * getRandomSign(), Mathf.Sin(radians) * getRandomSign());
-    }
-
-    private int getRandomSign()
-    {
-        return UnityEngine.Random.Range(0, 2) * 2 - 1;
-    }
-
-    [ClientRpc]
-    public void OutOfBoundsClientRpc()
-    {
-        handleOutOfBounds();
-    }
-
-    void Move()
-    {
-        if (owner != null)
+        if (direction == 0)
         {
-            Vector3 offset = owner.transform.forward * .8f;
-            if (owner.transform.position.z > 0)
+            direction = getRandomSign();
+        }
+
+        _velocity = _speed * new Vector2(Mathf.Cos(radians) * getRandomSign(), Mathf.Sin(radians) * direction);
+    }
+
+    public void Move()
+    {
+        if (_owner != null)
+        {
+            Vector3 offset = _owner.transform.forward * .8f;
+            if (_owner.transform.position.z > 0)
             {
                 offset *= -1;
             }
 
-            transform.position = owner.transform.position + offset;
+            transform.position = _owner.transform.position + offset;
             return;
         }
-        
+
         if (_velocity == Vector2.zero)
         {
             return;
@@ -72,12 +58,7 @@ public class Ball : NetworkBehaviour
             // send goal event
             if (transform.position.z < _goalLimits.x || transform.position.z > _goalLimits.y)
             {
-                OutOfBoundsClientRpc();
-
-                if (!NetworkManager.Singleton.IsHost)
-                {
-                    handleOutOfBounds();
-                }
+                _outOfBounds = true;
                 return;
             }
 
@@ -102,13 +83,8 @@ public class Ball : NetworkBehaviour
         }
     }
 
-    private void OnCollisionEnter(UnityEngine.Collision collision)
+    public void HandleCollision(UnityEngine.Collision collision)
     {
-        if (!IsServer)
-        {
-            return;
-        }
-
         float result = 0;
         Transform playerTransform = collision.collider.gameObject.transform;
         float width = playerTransform.localScale.x * .5f;
@@ -135,9 +111,8 @@ public class Ball : NetworkBehaviour
         _velocity.y = result;
     }
 
-    private void handleOutOfBounds()
+    private int getRandomSign()
     {
-        _outOfBounds = true;
-        OutOfBounds?.Invoke();
+        return UnityEngine.Random.Range(0, 2) * 2 - 1;
     }
 }
