@@ -20,7 +20,7 @@ public class NetworkGameplayManager
     private int _maxPlayers = 2;
     private List<Vector3> _startPositions = new List<Vector3> { new Vector3(0, 0, 9), new Vector3(0, 0, -9) };
     private string NETWORK_MANAGER_PREFAB = "Gameplay/NetworkManager";
-    private string BALL_PREFAB = "Gameplay/Ball";
+    private string BALL_PREFAB = "Gameplay/NetworkedBall";
     private NetworkManager _networkManager;
     private UnityTransport _transport;
     private const int MESSAGE_TYPE_GAME_STARTED = 0;
@@ -45,20 +45,31 @@ public class NetworkGameplayManager
 
     private void ReceivedServerMessage(ulong clientId, FastBufferReader reader)
     {
-        // Read the message type value that is written first when we send this unnamed message.
         reader.ReadValueSafe(out int messageType);
-        string messageValue = null;
+        string messageValue = "";
+        try
+        {
+            reader.ReadValueSafe(out messageValue);
+        }
+        catch(Exception ex) 
+        {
+            // Not all messages have values.
+            Debug.Log($"ReceivedServerMessage Exception :: {ex.Message}");
+        }
 
+        parseMessage(messageType, messageValue);
+    }
+
+    private void parseMessage(int messageType, string messageValue) 
+    {
         switch (messageType)
         {
             case MESSAGE_TYPE_GAME_STARTED:
-                reader.ReadValueSafe(out messageValue);
                 List<string> uids = messageValue.Split(',').ToList<string>();
                 gameStarted?.Invoke(uids);
                 break;
 
             case MESSAGE_TYPE_PLAYER_SCORED:
-                reader.ReadValueSafe(out messageValue);
                 playerScored?.Invoke(int.Parse(messageValue));
                 break;
 
@@ -91,6 +102,12 @@ public class NetworkGameplayManager
             }
 
             customMessagingManager.SendUnnamedMessageToAll(writer);
+        }
+
+        // ensure dedicated servers receive messages.
+        if (!_networkManager.IsHost)
+        {
+            parseMessage(type, message);
         }
     }
 
@@ -155,6 +172,21 @@ public class NetworkGameplayManager
         createBall(players[UnityEngine.Random.Range(0, _maxPlayers)]);
 
         broadcastToAllClients(MESSAGE_TYPE_GAME_RESTARTED);
+    }
+
+    public void EndGame()
+    {
+        if (!_networkManager.IsServer)
+        {
+            return;
+        }
+
+        if (_ball != null)
+        {
+            _ball.OutOfBounds -= handleOutOfBounds;
+            _ball.GetComponent<NetworkObject>().Despawn();
+            _ball = null;
+        }
     }
 
     private void OnClientConnectedCallback(ulong clientId)
@@ -232,21 +264,6 @@ public class NetworkGameplayManager
         EndGame();
     }
 
-    public void EndGame()
-    {
-        if (!_networkManager.IsServer)
-        {
-            return;
-        }
-
-        if (_ball != null)
-        {
-            _ball.OutOfBounds -= handleOutOfBounds;
-            _ball.GetComponent<NetworkObject>().Despawn();
-            _ball = null;
-        }
-    }
-
     private void handleOutOfBounds()
     {
         if (!_networkManager.IsServer)
@@ -268,6 +285,7 @@ public class NetworkGameplayManager
             NetworkObject playerObject = _networkManager.SpawnManager.GetPlayerNetworkObject(uid);
             NetworkedPlayer player = playerObject.GetComponent<NetworkedPlayer>();
 
+            // Player who did not score takes posession in this version of the rules.
             if (player.PlayerNumber != playerNumber)
             {
                 _ball.SetOwner(playerObject.GetComponent<NetworkTransform>());

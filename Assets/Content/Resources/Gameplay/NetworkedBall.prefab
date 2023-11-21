@@ -19,7 +19,7 @@ GameObject:
   - component: {fileID: 15805053861290524}
   - component: {fileID: 7599679825985445926}
   m_Layer: 0
-  m_Name: Ball
+  m_Name: NetworkedBall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

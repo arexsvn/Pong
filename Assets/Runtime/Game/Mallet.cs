@@ -7,6 +7,8 @@ public class Mallet : MonoBehaviour
     private Vector2 _bounds = new Vector2(-4, 4);
     private Renderer _renderer;
 
+    public float Speed { get => _speed; set => _speed = value; }
+
     private void Awake()
     {
         _renderer = GetComponent<Renderer>();

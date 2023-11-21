@@ -1,7 +1,5 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using TMPro;
 
 public class HudView : MonoBehaviour
@@ -10,7 +8,6 @@ public class HudView : MonoBehaviour
     public RectTransform rectTransform;
     public CanvasGroup canvasGroup;
     public Button backButton;
-    public Button themeButton;
     public TextMeshProUGUI scoreTop;
     public TextMeshProUGUI scoreBottom;
     public RectTransform safeAreaTransform;
@@ -38,6 +35,5 @@ public class HudView : MonoBehaviour
     public void enableButtons(bool enable)
     {
         backButton.interactable = enable;
-        themeButton.interactable = enable;
     }
 }

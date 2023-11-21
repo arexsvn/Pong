@@ -11,9 +11,9 @@ public class ApplicationScope : LifetimeScope
         builder.RegisterEntryPoint<AppController>();
 
         builder.Register<UICreator>(Lifetime.Singleton);
-        builder.Register<InputController>(Lifetime.Singleton);
         builder.Register<UIController>(Lifetime.Singleton);
         builder.Register<NetworkGameplayManager>(Lifetime.Singleton);
+        builder.Register<LocalGameplayManager>(Lifetime.Singleton);
         builder.Register<MainMenuController>(Lifetime.Singleton);
         builder.Register<HudController>(Lifetime.Singleton);
         builder.Register<LocaleManager>(Lifetime.Singleton);

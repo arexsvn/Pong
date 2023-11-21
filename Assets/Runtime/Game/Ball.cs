@@ -13,7 +13,7 @@ public class Ball : MonoBehaviour
     public bool OutOfBounds { get => _outOfBounds; }
     public Transform Owner { get => _owner; set => _owner = value; }
 
-    public void ResetToStart()
+    public void Stop()
     {
         _velocity = Vector2.zero;
         _outOfBounds = false;
@@ -83,10 +83,9 @@ public class Ball : MonoBehaviour
         }
     }
 
-    public void HandleCollision(UnityEngine.Collision collision)
+    public void HandleCollision(Transform playerTransform)
     {
         float result = 0;
-        Transform playerTransform = collision.collider.gameObject.transform;
         float width = playerTransform.localScale.x * .5f;
         float deltaX = transform.position.x - playerTransform.position.x;
         float offsetX = Mathf.Min(Math.Abs(deltaX) / width, .6f);

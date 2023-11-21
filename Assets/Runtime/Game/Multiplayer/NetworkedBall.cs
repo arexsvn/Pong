@@ -48,7 +48,7 @@ public class NetworkedBall : NetworkBehaviour
 
     public void ResetToStart()
     {
-        _ball.ResetToStart();
+        _ball.Stop();
     }
 
     public void SetRandomVelocity(int direction = 0)
@@ -69,7 +69,7 @@ public class NetworkedBall : NetworkBehaviour
             return;
         }
 
-        _ball.HandleCollision(collision);
+        _ball.HandleCollision(collision.collider.gameObject.transform);
     }
 
     private void handleOutOfBounds()

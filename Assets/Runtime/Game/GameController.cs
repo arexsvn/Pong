@@ -23,7 +23,10 @@ public class GameController
     private bool _waitingForGame;
     private bool _gameFinished;
     readonly NetworkGameplayManager _networkGameplayManager;
-    private bool _offline = false;
+    readonly LocalGameplayManager _localGameplayManager;
+    private bool _offline;
+    private bool _localGameActive;
+    private bool _networkGameActive;
     private BasicListView _startGameDialog;
     private BasicListView _selectMultiplayerGameTypeDialog;
     private JoinGameView _joinGameView;
@@ -42,7 +45,8 @@ public class GameController
                            VisualThemeController visualThemeController,
                            LocaleManager localeManager,
                            UIController uIController,
-                           NetworkGameplayManager networkGameplayManager)
+                           NetworkGameplayManager networkGameplayManager,
+                           LocalGameplayManager localGameplayManager)
     {
         _courtController = courtController;
         _hudController = hudController;
@@ -55,6 +59,7 @@ public class GameController
         _localeManager = localeManager;
         _uiController = uIController;
         _networkGameplayManager = networkGameplayManager;
+        _localGameplayManager = localGameplayManager;
     }
     public void init()
     {
@@ -68,8 +73,6 @@ public class GameController
         _players = new Dictionary<int, PlayerData>();
 
         _courtController.init();
-        _courtController.error.Add(handleCourtError);
-        _courtController.playerWon.Add(showEndLevel);
 
         _networkGameplayManager.Init();
         _networkGameplayManager.playerScored += handlePlayerScore;
@@ -78,35 +81,24 @@ public class GameController
         _networkGameplayManager.serverStopped += handleServerStopped;
         _networkGameplayManager.gameRestarted += handleGameRestarted;
 
+        _localGameplayManager.Init();
+        _localGameplayManager.playerScored += handlePlayerScore;
+        _localGameplayManager.gameStarted += handleGameStarted;
+        _localGameplayManager.gameRestarted += handleGameRestarted;
+
+        _particleController.init();
+
         _hudController.view.backButton.onClick.AddListener(handleConfirmEndGame);
-        _hudController.view.themeButton.onClick.AddListener(showTheme);
 
         _levelDialog = _uiCreator.showDialog("Match Complete", "Game Over Man!", new List<ButtonVO> {
                                              new ButtonVO(handlePlayAgain, "Play Again"),
                                              new ButtonVO(handleCancelGame, "Exit") });
         _levelDialog.baseView.baseView.showBackground(false);
         _levelDialog.show(false, 0f);
-
-        _localeManager.LanguageChanged.Add(handleLanguageChanged);
-    }
-
-    private void showTheme()
-    {
-        _audioController.play("click", AudioType.Sfx);
-        pauseGame(true);
-        _visualThemeController.screenClosed.AddOnce(() => pauseGame(false));
-        _visualThemeController.show(true);
-    }
-
-    private void pauseGame(bool pause)
-    {
-        _courtController.gamePaused = pause;
     }
 
     private void showHud()
     {
-        //_hudController.view.themeText.text = theme.title.ToUpperInvariant();
-        //_hudController.view.levelText.text = $"{_localeManager.lookup("level")} {_saveStateController.CurrentSave.currentLevel}";
         _hudController.setScoreTop(0);
         _hudController.setScoreBottom(0);
         _hudController.view.show(true, false);
@@ -131,7 +123,8 @@ public class GameController
         _startGameDialog = _uiCreator.showBasicListView("Start Game", new List<ButtonData>
         {
             new ButtonData("versus ai", startAIGame),
-            new ButtonData("versus human", showMultiplayerGameTypeSelection)
+            new ButtonData("versus human", showMultiplayerGameTypeSelection),
+            new ButtonData("start dedicated server", startDedicatedServerGame)
         });
     }
 
@@ -146,13 +139,13 @@ public class GameController
         _selectMultiplayerGameTypeDialog = _uiCreator.showBasicListView("Select Multiplayer Game Type", new List<ButtonData>
         {
             new ButtonData("join game", showJoinGame),
-            new ButtonData("host game", startHostGame),
-            new ButtonData("start dedicated server", startDedicatedServerGame)
+            new ButtonData("host game", startHostGame)
         });
     }
 
     private void startDedicatedServerGame()
     {
+        setNetworkGameActive();
         _networkGameplayManager.StartServer();
         hideDialogs();
         startCourt();
@@ -161,6 +154,7 @@ public class GameController
 
     private void startHostGame()
     {
+        setNetworkGameActive();
         _networkGameplayManager.StartHost();
         hideDialogs();
         startCourt();
@@ -169,7 +163,10 @@ public class GameController
 
     private void startAIGame()
     {
+        setLocalGameActive();
         hideDialogs();
+        startCourt();
+        _localGameplayManager.Start();
     }
 
     private void hideDialogs()
@@ -192,7 +189,7 @@ public class GameController
         _waitingForGame = true;
         if (_waitingForGameStartDialog == null)
         {
-            _waitingForGameStartDialog = _uiCreator.showConfirmationDialog("Hold On", "Waiting for game to start...", handleCancelGame, "Cancel");
+            _waitingForGameStartDialog = _uiCreator.showConfirmationDialog("Entered Game", "Waiting for game to start...", handleCancelGame, "Cancel");
         }
         _waitingForGameStartDialog.show(true);
     }
@@ -200,7 +197,10 @@ public class GameController
     private void hideWaitingForGameStart()
     {
         _waitingForGame = false;
-        _waitingForGameStartDialog.show(false);
+        if (_waitingForGameStartDialog != null)
+        {
+            _waitingForGameStartDialog.show(false);
+        }
     }
 
     private void showJoinGame()
@@ -232,6 +232,8 @@ public class GameController
 
     private void handleJoinGame()
     {
+        setNetworkGameActive();
+
         _saveStateController.CurrentSave.lastIpAddress = _joinGameView.ipAddressText.text;
         _saveStateController.save();
 
@@ -243,56 +245,37 @@ public class GameController
         showWaitingForGameStart();
     }
 
+    private void setNetworkGameActive()
+    {
+        _networkGameActive = true;
+
+        if (_localGameActive) 
+        {
+            _localGameActive = false;
+            _localGameplayManager.Cleanup();
+        }
+    }
+
+    private void setLocalGameActive()
+    {
+        _localGameActive = true;
+
+        if (_networkGameActive)
+        {
+            _networkGameActive = false;
+            cleanupMultiplayerGame();
+        }
+    }
+
     private void startCourt()
     {
-        //_coroutineRunner.delayAction(() =>_levelDialog.baseView.fade(true), .3f);
-
         enterGame.Dispatch();
         _courtController.showBoard();
         _coroutineRunner.delayAction(showHud, 1f);
     }
 
-    private string addTextHighlight(string text)
-    {
-        return $"<size=120%><color=#8cd1ff>{text.ToUpper()}</color></size>";
-    }
-
-    private void handleLanguageChanged(string language)
-    {
-
-    }
-
-    /*
-    private void startNextLevel()
-    {        
-        _levelDialog.baseView.SetTitle($"<size=120%>Next Level</size>");
-        _levelDialog.show(true);
-
-        _coroutineRunner.delayAction(startCourt, 2f);
-
-        _audioController.play("level_start", AudioType.Sfx);
-
-        _coroutineRunner.stop(_fireworksTimer);
-    }
-
-    private void handleCourtReady()
-    {
-        if (_courtController.showing)
-        {
-            pauseGame(false);
-            _gameInProgress = true;
-        }
-    }
-    */
-
-    private void handleCourtError(string errorType, string errorMessage)
-    {
-
-    }
-
     private void showCourt(bool show)
     {
-        pauseGame(!show);
         _courtController.showBoard(show);
         _hudController.view.show(show, false);
     }
@@ -303,12 +286,20 @@ public class GameController
         _uiController.showBackground();
         _audioController.play("click", AudioType.Sfx);
         showCourt(false);
+        stopFireworks();
         exitGame.Dispatch();
     }
 
     private void handlePlayAgain()
     {
-        _networkGameplayManager.RestartGame();
+        if (_localGameActive)
+        {
+            _localGameplayManager.RestartGame();
+        }
+        else
+        {
+            _networkGameplayManager.RestartGame();
+        }
     }
 
     private void showFireworks()
@@ -320,6 +311,11 @@ public class GameController
         _audioController.play("fireworks", AudioType.Sfx);
 
         _fireworksTimer = _coroutineRunner.delayAction(showFireworks, (float)GetRandomNumber(0.2, 1.0));
+    }
+
+    private void stopFireworks()
+    {
+        _coroutineRunner.stop(_fireworksTimer);
     }
 
     public double GetRandomNumber(double minimum, double maximum)
@@ -350,7 +346,15 @@ public class GameController
 
         _saveStateController.save();
 
-        _networkGameplayManager.EndGame();
+        if (_localGameActive)
+        {
+            _localGameplayManager.EndGame();
+        }
+        else
+        {
+            _networkGameplayManager.EndGame();
+        }
+
         showFireworks();
         _uiController.showBackground();
 
@@ -366,12 +370,21 @@ public class GameController
 
     private void handleConfirmEndGame()
     {
-        _uiCreator.showConfirmationDialog("Leave Game", "Are you sure you want to leave? This will end the game for all players.", handleEndGame, "Leave", true);
+        _uiCreator.showConfirmationDialog("Leave Game", "Are you sure you want to leave? This will end the game for all players.", handleCancelGame, "Leave", true);
     }
 
     private void handleEndGame()
     {
-        handleClientDisconnected(default);
+        if (_localGameActive)
+        {
+            _localGameActive = false;
+            _localGameplayManager.Cleanup();
+        }
+        if (_networkGameActive)
+        {
+            _networkGameActive = false;
+            cleanupMultiplayerGame();
+        }
     }
 
     private void handleClientDisconnected(ulong clientId)
@@ -386,7 +399,7 @@ public class GameController
 
     private void handleCancelGame()
     {
-        cleanupMultiplayerGame();
+        handleEndGame();
         handleBack();
     }
 
@@ -412,7 +425,7 @@ public class GameController
             kvp.Value.score = 0;
         }
 
-        _coroutineRunner.stop(_fireworksTimer);
+        stopFireworks();
         _hudController.view.show(true, false);
         _uiController.hideBackground();
         _levelDialog.show(false);
@@ -450,4 +463,12 @@ public class PlayerData
         this.playerNumber = playerNumber;
         this.clientId = clientId;
     }
+}
+
+public enum GameType
+{
+    AI,
+    Join,
+    Host,
+    DedicatedServer
 }
