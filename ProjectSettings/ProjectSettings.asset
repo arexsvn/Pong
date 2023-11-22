@@ -734,7 +734,7 @@ PlayerSettings:
   suppressCommonWarnings: 1
   allowUnsafeCode: 0
   useDeterministicCompilation: 1
-  selectedPlatform: 2
+  selectedPlatform: 0
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1
   gcIncremental: 0
@@ -820,10 +820,10 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
-  cloudProjectId: 199e96d1-bcd8-49ab-91ea-59fd9c3f8612
+  cloudProjectId: 227299cb-b932-4a8d-a519-c8768342dcf7
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Word Tour
+  projectName: Pong
   organizationId: arexsvn
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 1

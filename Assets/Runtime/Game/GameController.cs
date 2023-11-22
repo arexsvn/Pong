@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class GameController
@@ -30,10 +29,13 @@ public class GameController
     private BasicListView _startGameDialog;
     private BasicListView _selectMultiplayerGameTypeDialog;
     private JoinGameView _joinGameView;
+    private JoinGameRelayView _joinGameRelayView;
     private static string JOIN_GAME_PREFAB = "UI/JoinGame";
+    private static string JOIN_GAME_RELAY_PREFAB = "UI/JoinGameRelay";
     private DialogBoxView _waitingForGameStartDialog;
     private int _maxScore = 3;
     private Dictionary<int, PlayerData> _players;
+    private string _roomCode;
 
     public GameController(CourtController courtController, 
                            HudController hudController, 
@@ -124,7 +126,10 @@ public class GameController
         {
             new ButtonData("versus ai", startAIGame),
             new ButtonData("versus human", showMultiplayerGameTypeSelection),
-            new ButtonData("start dedicated server", startDedicatedServerGame)
+#if ALLOW_NON_RELAY_MULTIPLAYER
+            new ButtonData("start dedicated server (non-relay)", ()=>startDedicatedServerGame(false)),
+#endif
+            new ButtonData("start dedicated server", ()=>startDedicatedServerGame(true))
         });
     }
 
@@ -138,24 +143,46 @@ public class GameController
 
         _selectMultiplayerGameTypeDialog = _uiCreator.showBasicListView("Select Multiplayer Game Type", new List<ButtonData>
         {
-            new ButtonData("join game", showJoinGame),
-            new ButtonData("host game", startHostGame)
+#if ALLOW_NON_RELAY_MULTIPLAYER
+            new ButtonData("join game (non-relay)", showJoinGame),
+            new ButtonData("host game (non-relay)", ()=>startHostGame(false)),
+#endif
+            new ButtonData("join game", showJoinGameRelay),
+            new ButtonData("host game", ()=>startHostGame(true))
         });
     }
 
-    private void startDedicatedServerGame()
+    private async void startDedicatedServerGame(bool useRelay)
     {
         setNetworkGameActive();
-        _networkGameplayManager.StartServer();
+
+        if (useRelay) 
+        {
+            _roomCode = await _networkGameplayManager.StartServerWithRelay();
+        }
+        else
+        {
+            _networkGameplayManager.StartServer();
+        }
+
         hideDialogs();
         startCourt();
         showWaitingForGameStart();
     }
 
-    private void startHostGame()
+    private async void startHostGame(bool useRelay)
     {
         setNetworkGameActive();
-        _networkGameplayManager.StartHost();
+
+        if (useRelay)
+        {
+            _roomCode = await _networkGameplayManager.StartHostWithRelay();
+        }
+        else
+        {
+            _networkGameplayManager.StartHost();
+        }
+
         hideDialogs();
         startCourt();
         showWaitingForGameStart();
@@ -182,6 +209,11 @@ public class GameController
         {
             _joinGameView.fade(true, UITransitions.FADE_TIME);
         }
+
+        if (_joinGameRelayView != null)
+        {
+            _joinGameRelayView.fade(true, UITransitions.FADE_TIME);
+        }
     }
 
     private void showWaitingForGameStart()
@@ -189,9 +221,21 @@ public class GameController
         _waitingForGame = true;
         if (_waitingForGameStartDialog == null)
         {
-            _waitingForGameStartDialog = _uiCreator.showConfirmationDialog("Entered Game", "Waiting for game to start...", handleCancelGame, "Cancel");
+            string message = "Waiting for game to start...";
+
+            if (!string.IsNullOrEmpty(_roomCode))
+            {
+                message = $"Waiting for other players, use room code:\n{addTextHighlight(_roomCode)}";
+            }
+
+            _waitingForGameStartDialog = _uiCreator.showConfirmationDialog("Entered Game", message, handleCancelGame, "Cancel");
         }
         _waitingForGameStartDialog.show(true);
+    }
+
+    private string addTextHighlight(string text)
+    {
+        return $"<size=120%><color=#8cd1ff>{text.ToUpper()}</color></size>";
     }
 
     private void hideWaitingForGameStart()
@@ -234,15 +278,63 @@ public class GameController
     {
         setNetworkGameActive();
 
-        _saveStateController.CurrentSave.lastIpAddress = _joinGameView.ipAddressText.text;
-        _saveStateController.save();
+        if (!string.IsNullOrEmpty(_joinGameView.ipAddressText.text))
+        {
+            _saveStateController.CurrentSave.lastIpAddress = _joinGameView.ipAddressText.text;
+            _saveStateController.save();
+        }
 
-        _networkGameplayManager.SetIpAddress(_joinGameView.ipAddressText.text);
+        _networkGameplayManager.SetIpAddress(_saveStateController.CurrentSave.lastIpAddress);
         _networkGameplayManager.StartClient();
 
         hideDialogs();
         startCourt();
         showWaitingForGameStart();
+    }
+
+    private void showJoinGameRelay()
+    {
+        if (_joinGameRelayView != null)
+        {
+            _joinGameRelayView.fade(false, UITransitions.FADE_TIME);
+            return;
+        }
+
+        _joinGameRelayView = Object.Instantiate(Resources.Load<JoinGameRelayView>(JOIN_GAME_RELAY_PREFAB));
+        _joinGameRelayView.ApplyTheme(_uiCreator.visualThemeController.CurrentTheme);
+        _joinGameRelayView.joinButton.button.onClick.AddListener(handleJoinGameRelay);
+        _joinGameRelayView.backButton.onClick.AddListener(() =>
+        {
+            _joinGameRelayView.fade(true, UITransitions.FADE_TIME);
+        });
+
+        _joinGameRelayView.fade(true, 0f);
+        _joinGameRelayView.fade(false, UITransitions.FADE_TIME);
+    }
+
+    private async void handleJoinGameRelay()
+    {
+        if (string.IsNullOrEmpty(_joinGameRelayView.roomCodeText.text))
+        {
+            _uiCreator.showErrorDialog("Enter a room code to join game.");
+            return;
+        }
+        
+        setNetworkGameActive();
+
+        bool result = await _networkGameplayManager.StartClientWithRelay(_joinGameRelayView.roomCodeText.text.ToUpper());
+
+        if (result)
+        {
+            hideDialogs();
+            startCourt();
+            showWaitingForGameStart();
+        }
+        else
+        {
+            _uiCreator.showErrorDialog("Error joining relay game.");
+        }
+
     }
 
     private void setNetworkGameActive()
@@ -296,9 +388,13 @@ public class GameController
         {
             _localGameplayManager.RestartGame();
         }
-        else
+        else if (_networkGameplayManager.IsServer)
         {
             _networkGameplayManager.RestartGame();
+        }
+        else 
+        {
+            _networkGameplayManager.RequestRestart();
         }
     }
 
@@ -342,9 +438,8 @@ public class GameController
 
         _hudController.setScoreTop(0);
         _hudController.setScoreBottom(0);
-        _hudController.view.show(false, false);
 
-        _saveStateController.save();
+        _hudController.view.show(false, false);
 
         if (_localGameActive)
         {
@@ -412,6 +507,16 @@ public class GameController
         }
 
         _gameFinished = false;
+
+        if (_networkGameActive && _networkGameplayManager.IsDedicatedServer)
+        {
+            _hudController.view.serverStatus.text = "Dedicated Server";
+        }
+        else
+        {
+            _hudController.view.serverStatus.text = "";
+        }
+
         hideWaitingForGameStart();
     }
 

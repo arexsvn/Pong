@@ -121,7 +121,7 @@ public sealed class DefinesPanel : EditorWindow
 
         foreach (string rspPath in rspPaths)
         {
-            if (rspPath == _defaultRSPFilePath)
+            if (rspPath == _defaultRSPFilePath || rspPath.Contains(DEFAULT_RSP_FILENAME))
             {
                 continue;
             }
@@ -159,7 +159,7 @@ public sealed class DefinesPanel : EditorWindow
 
         for (int n = 0; n < rspNames.Count; n++)
         {
-            string[] parts = rspNames[n].Split("/");
+            string[] parts = rspNames[n].Split('/');
             rspNamesDisplay[n] = parts[parts.Length - 2] + "/" + parts[parts.Length - 1];
         }
 
@@ -365,7 +365,7 @@ public sealed class DefinesPanel : EditorWindow
             }
         }
 
-        rspFileContents = string.Join(';', entries);
+        rspFileContents = string.Join(";", entries);
         rspFileContents = rspFileContents.Replace("-define:", "");  // Remove "-define" string
         entries = rspFileContents.Split(';').ToList();
         return entries;

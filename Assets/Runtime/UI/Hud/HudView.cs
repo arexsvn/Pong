@@ -8,6 +8,7 @@ public class HudView : MonoBehaviour
     public RectTransform rectTransform;
     public CanvasGroup canvasGroup;
     public Button backButton;
+    public TextMeshProUGUI serverStatus;
     public TextMeshProUGUI scoreTop;
     public TextMeshProUGUI scoreBottom;
     public RectTransform safeAreaTransform;
