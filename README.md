@@ -3,7 +3,9 @@
 ## How to play
 Play the game on itch.io at https://arexsvn.itch.io/pong
 
-The game can be played in a mobile or desktop browser or by running a native executable. A Windows build is included in this repo at BuildArchives/Pong_build_win.zip.
+The game can be played in a mobile or desktop browser or by running a native executable. A Windows build is included in this repo at BuildArchives/Pong_build_win.zip. 
+
+To build the game locally clone the repo and add as a new project in Unity like usual (I'm using unity 2022.3.1f1, this version or newer should work fine.) The default WebGL or Windows/Mac/Linux platforms can be tested with the usual "Build and Run" button in Build Settings. To test multiplayer locally simply run multiple versions of the .exe.
 
 Crossplay between all platforms is supported including native app and WebGL instances. A game or dedicated server can be started from any platform.
 ### Multiplayer
