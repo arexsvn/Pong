@@ -34,7 +34,7 @@ All of the gameplay code and multiplayer functionality were created from scratch
 
 Client input requests are handled with RPC messages in the "Networked" version of the gameplay components for Player and Ball.
 
-While this setup works decently well the client interpolation/server input processing introduces latency to the movement of the puck and paddles. A potential solution for this could be to use client extrapolation and local input handling where the client predicts the placement of gameplay objects. This would work well for the movement of the puck since it follows a predictable path but would require state synchronization to deal with any client divergence from the authoritative state on the server.
+While this setup works decently well the client interpolation/server input processing introduces latency to the movement of the puck and mallets. A potential solution for this could be to use client extrapolation and local input handling where the client predicts the placement of gameplay objects. This would work well for the movement of the puck since it follows a predictable path but would require state synchronization to deal with any client divergence from the authoritative state on the server.
 
 * LocalGameManager - Handles starting and running a local game. 
 
