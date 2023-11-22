@@ -86,7 +86,7 @@ public class VisualThemeController
     public void close()
     {
         show(false);
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
     }
 
     public VisualTheme DefaultTheme

@@ -78,19 +78,19 @@ public class MainMenuController
 
     public void handlePlayGame()
     {
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
         startGame.Dispatch();
     }
 
     public void handleSelectTheme()
     {
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
         _themeController.show();
     }
 
     public void handleOpenSettings()
     {
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
         _settingsController.show();
     }
 

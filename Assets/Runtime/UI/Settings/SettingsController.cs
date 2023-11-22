@@ -81,7 +81,7 @@ public class SettingsController
     public void show(bool show = true)
     {
         _view.baseView.fade(!show);
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
 
         if (!show)
         {
@@ -126,12 +126,12 @@ public class SettingsController
 
     private void closeLanguageSelection()
     {
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
         _languageSelectionView.dialogWithItemScrollView.baseView.fade(true);
     }
     private void showLanguageSelection()
     {
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
         _languageSelectionView.dialogWithItemScrollView.baseView.fade(false);
     }
 }

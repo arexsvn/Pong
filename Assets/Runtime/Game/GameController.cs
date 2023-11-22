@@ -33,7 +33,7 @@ public class GameController
     private static string JOIN_GAME_PREFAB = "UI/JoinGame";
     private static string JOIN_GAME_RELAY_PREFAB = "UI/JoinGameRelay";
     private DialogBoxView _waitingForGameStartDialog;
-    private int _maxScore = 3;
+    private int _maxScore = 10;
     private Dictionary<int, PlayerData> _players;
     private string _roomCode;
 
@@ -108,7 +108,7 @@ public class GameController
 
     public void showGameTypes()
     {
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
 
         if (_offline)
         {
@@ -158,6 +158,7 @@ public class GameController
 
         if (useRelay) 
         {
+            showWaitingForGameStart();
             _roomCode = await _networkGameplayManager.StartServerWithRelay();
         }
         else
@@ -176,6 +177,7 @@ public class GameController
 
         if (useRelay)
         {
+            showWaitingForGameStart();
             _roomCode = await _networkGameplayManager.StartHostWithRelay();
         }
         else
@@ -219,17 +221,20 @@ public class GameController
     private void showWaitingForGameStart()
     {
         _waitingForGame = true;
+
+        string message = "Waiting for game to start...";
+
+        if (!string.IsNullOrEmpty(_roomCode))
+        {
+            message = $"Waiting for other players, use room code:\n{addTextHighlight(_roomCode)}";
+        }
+
         if (_waitingForGameStartDialog == null)
         {
-            string message = "Waiting for game to start...";
-
-            if (!string.IsNullOrEmpty(_roomCode))
-            {
-                message = $"Waiting for other players, use room code:\n{addTextHighlight(_roomCode)}";
-            }
-
             _waitingForGameStartDialog = _uiCreator.showConfirmationDialog("Entered Game", message, handleCancelGame, "Cancel");
         }
+
+        _waitingForGameStartDialog.baseView.SetMessage(message);
         _waitingForGameStartDialog.show(true);
     }
 
@@ -314,15 +319,16 @@ public class GameController
 
     private async void handleJoinGameRelay()
     {
-        if (string.IsNullOrEmpty(_joinGameRelayView.roomCodeText.text))
+        if (string.IsNullOrEmpty(_joinGameRelayView.roomNameTextLegacy.text))
         {
             _uiCreator.showErrorDialog("Enter a room code to join game.");
             return;
         }
         
         setNetworkGameActive();
+        showWaitingForGameStart();
 
-        bool result = await _networkGameplayManager.StartClientWithRelay(_joinGameRelayView.roomCodeText.text.ToUpper());
+        bool result = await _networkGameplayManager.StartClientWithRelay(_joinGameRelayView.roomNameTextLegacy.text.ToUpper());
 
         if (result)
         {
@@ -339,6 +345,7 @@ public class GameController
 
     private void setNetworkGameActive()
     {
+        _roomCode = null;
         _networkGameActive = true;
 
         if (_localGameActive) 
@@ -376,7 +383,7 @@ public class GameController
     {
         _levelDialog.show(false);
         _uiController.showBackground();
-        _audioController.play("click", AudioType.Sfx);
+        _audioController.play("snap", AudioType.Sfx);
         showCourt(false);
         stopFireworks();
         exitGame.Dispatch();
@@ -550,6 +557,7 @@ public class GameController
 
     private void cleanupMultiplayerGame()
     {
+        _roomCode = null;
         _gameFinished = true;
         _players.Clear();
         _networkGameplayManager.Shutdown();

@@ -8,10 +8,10 @@ public class AiPlayer : MonoBehaviour
     private Mallet _mallet;
     private bool _canServe;
     private const float SERVE_WAIT_SECS = 1.5f;              // The delay before serving after being given ownership of the ball
-    private const float DIRECTION_CHANGE_DELAY_SECS = .12f;  // How long it takes for the ai player to "react" to a direction change
+    private const float DIRECTION_CHANGE_DELAY_SECS = .14f;  // How long it takes for the ai player to "react" to a direction change
     private const float MOVE_THRESHOLD = .5f;                // Min target delta before moving
     private const float MIN_TRACKING_DISTANCE = 7f;          // Min distance along vertical axis before target tracking starts.
-    private const float SPEED = .14f;                        // Max player moving speed
+    private const float SPEED = .12f;                        // Max player moving speed
     private float _directionChangeWait = 0f;
     private float _serveWait = 0f;
     private int _lastDirection = 0;

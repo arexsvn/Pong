@@ -70,7 +70,7 @@ public class NetworkedPlayer : NetworkBehaviour
 
             if (_canServe)
             {
-                if (Input.GetKey(KeyCode.Space))
+                if (Input.GetKey(KeyCode.Space) || InputUtils.IsInputUp())
                 {
                     _canServe = false;
                     SubmitServeRequestServerRpc();
@@ -82,13 +82,28 @@ public class NetworkedPlayer : NetworkBehaviour
                 }
             }
 
-            if (Input.GetKey(KeyCode.LeftArrow))
+            if (InputUtils.IsInputDown())
             {
-                currentDirection = -1;
+                Vector2 currentInputPosition = InputUtils.GetLastInputPosition();
+                if (currentInputPosition.x > 0)
+                {
+                    currentDirection = 1;
+                }
+                else if (currentInputPosition.x < 0)
+                {
+                    currentDirection = -1;
+                }
             }
-            else if (Input.GetKey(KeyCode.RightArrow))
+            else
             {
-                currentDirection = 1;
+                if (Input.GetKey(KeyCode.LeftArrow))
+                {
+                    currentDirection = -1;
+                }
+                else if (Input.GetKey(KeyCode.RightArrow))
+                {
+                    currentDirection = 1;
+                }
             }
 
             if (currentDirection != _lastDirection)

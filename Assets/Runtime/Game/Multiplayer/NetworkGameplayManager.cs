@@ -347,6 +347,12 @@ public class NetworkGameplayManager
 
     private void handlePlayerServe()
     {
+        // check for null in case a game just ended or disconnected.
+        if (_ball == null)
+        {
+            return; 
+        }
+        
         int direction = 1;
         if (_ball.GetOwner().position.z > 0)
         {
